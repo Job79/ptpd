@@ -148,6 +148,7 @@ func (bkt *pebbleBucket) GetValues(rng BucketRange) ([]BucketValue, error) {
 	}
 
 	if err := refreshTimestamp(bkt, bkt.store.db); err != nil {
+		_ = iter.Close()
 		return values, err
 	}
 
@@ -181,6 +182,7 @@ func (bkt *pebbleBucket) AppendValues(values []BucketValue) error {
 // DeleteValues deletes values from the bucket
 func (bkt *pebbleBucket) DeleteValues(rng BucketRange) error {
 	batch := bkt.store.db.NewBatch()
+	defer batch.Close()
 	if err := batch.DeleteRange(
 		getPebbleValueKey(bkt.id, rng.Start),
 		getPebbleValueKey(bkt.id, rng.End),
@@ -247,6 +249,7 @@ func computeValues(bkt *pebbleBucket, values []BucketValue, appendOnly bool) err
 // bucket.
 func insertValues(bkt *pebbleBucket, values []BucketValue) error {
 	batch := bkt.store.db.NewBatch()
+	defer batch.Close()
 	key := getPebbleValueKey(bkt.id, 0)
 	for _, value := range values {
 		binary.BigEndian.PutUint16(key[1+BucketIDLength:], value.Idx)

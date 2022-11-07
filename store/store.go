@@ -10,7 +10,6 @@ import (
 	"github.com/cockroachdb/pebble"
 )
 
-// Errors used by the store.
 var (
 	// ErrBucketNotFound is returned when a bucket is
 	// requested but no bucket is found with the given
@@ -26,15 +25,15 @@ var (
 	ErrBucketIsFull = errors.New("store: bucket is full")
 
 	// ErrInvalidAppend is returned when an append
-	// operation is attempted with an non-zero idx that is
+	// operation is attempted with a non-zero idx that is
 	// not equal to lastIdx+1.
 	ErrInvalidAppend = errors.New("store: the idx passed to Append is invalid")
 )
 
-// Store keeps track of a list with buckets.
+// Store manages and keeps track of buckets.
 //
-// Each of these buckets contain a list with values. The
-// store interface is only responsible for managing the
+// Each of these buckets contain a list with bucket values.
+// The store interface is only responsible for managing the
 // buckets, the values and properties of the buckets are
 // managed through the bucket interface. The store is
 // thread-safe.
@@ -61,7 +60,7 @@ type Store interface {
 
 // pebbleStore implements the Store interface.
 type pebbleStore struct {
-	opts     *StoreOptions // Options for the store.
+	opts     *StoreOptions // Options for the underlying Pebble store.
 	db       *pebble.DB    // Underlying Pebble store.
 	gcTicker *time.Ticker  // GC ticker.
 	cache    sync.Map      // Cache with buckets.
@@ -170,8 +169,8 @@ func (str *pebbleStore) CreateBucket(id BucketID, key BucketKey) (Bucket, error)
 // DeleteBucket deletes a bucket.
 //
 // Deleting a bucket removes the bucket from the cache and
-// underlying pebble store, this includes all the bucket
-// values.
+// underlying pebble store, this includes all the related
+// bucket values.
 func (str *pebbleStore) DeleteBucket(bkt Bucket) error {
 	if err := bkt.DeleteValues(BucketRange{Start: 0, End: math.MaxUint16}); err != nil {
 		return err
@@ -225,8 +224,8 @@ func (str *pebbleStore) GC() error {
 
 // Close closes the store.
 //
-// It closes the underlying pebble database, cleans the
-// cache and stops the GC ticker.
+// Close the underlying pebble database, clean the
+// cache and stop the GC ticker.
 func (str *pebbleStore) Close() error {
 	if str.gcTicker != nil {
 		str.gcTicker.Stop()
@@ -243,7 +242,7 @@ func (str *pebbleStore) Close() error {
 // First byte of the underlying pebble db key, this byte is
 // prepended before the actual key. This allows store.GC to
 // iterate over all the buckets in the store without having
-// to iterate over the values.
+// to iterate over the bucket values.
 const (
 	bucketTable = iota
 	valueTable

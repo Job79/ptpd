@@ -13,7 +13,7 @@ import (
 // Bucket keeps track of a list of values.
 //
 // A bucket instance can be retrieved from the store.
-// Buckets keep track of there own values, these are:
+// Each bucket keeps track of its own values, these values are:
 //   - bucket id
 //   - bucket key
 //   - bucket access timestamp
@@ -47,8 +47,8 @@ const (
 )
 
 // BucketID is the unique identifier of a bucket. The first
-// 14 bytes are random, the 15th byte is the lifetime, and
-// the 16th byte contains the permissions.
+// 14 bytes are random, the 15th byte contains the lifetime,
+// and the 16th byte contains the permissions.
 type BucketID *[BucketIDLength]byte
 
 // BucketKey is used to grant protected access. Its stored
@@ -69,8 +69,8 @@ type BucketPermissions struct {
 	Append bool
 }
 
-// GetBucketLifetime returns the lifetime of a bucket, 0 if
-// bucket has an infinite lifetime.
+// GetBucketLifetime returns the lifetime of a bucket, and 0
+// if bucket has an infinite lifetime.
 func GetBucketLifetime(id BucketID) byte {
 	return id[14]
 }
@@ -115,7 +115,7 @@ type BucketRange struct {
 // pebbleBucket implements the Bucket interface.
 type pebbleBucket struct {
 	id   BucketID
-	data []byte // First 4 bytes contain the timestamp, other 32 are the key.
+	data []byte // First 4 bytes contain the timestamp, last 32 are the key.
 
 	mtx     sync.Mutex   // Mutex guarding the lastIdx field.
 	lastIdx uint16       // Highest index in the value table.
